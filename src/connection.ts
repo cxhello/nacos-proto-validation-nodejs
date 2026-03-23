@@ -3,6 +3,7 @@ import { RequestService, BiRequestStreamService, type Payload } from './proto-lo
 import { buildPayload, parsePayload } from './codec';
 
 export class Connection {
+  private channel: grpc.Channel | null = null;
   private requestClient: any;
   private biStream: any;
   public connectionId = '';
@@ -16,8 +17,10 @@ export class Connection {
 
   async connect(): Promise<void> {
     const creds = grpc.credentials.createInsecure();
-    this.requestClient = new RequestService(this.serverAddr, creds);
-    const biClient = new BiRequestStreamService(this.serverAddr, creds);
+    // Share a single gRPC channel so unary + BiStream use the same connection
+    this.channel = new grpc.Channel(this.serverAddr, creds, {});
+    this.requestClient = new RequestService(this.serverAddr, creds, { channelOverride: this.channel });
+    const biClient = new BiRequestStreamService(this.serverAddr, creds, { channelOverride: this.channel });
 
     // Step 1: ServerCheck
     await this.serverCheck();
@@ -132,5 +135,6 @@ export class Connection {
   close(): void {
     this.biStream?.end();
     this.requestClient?.close();
+    this.channel?.close();
   }
 }
