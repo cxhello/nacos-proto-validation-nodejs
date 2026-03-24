@@ -1,11 +1,18 @@
 import os from 'os';
 import { type Payload } from './proto-loader';
 
+export interface MessageFns<T> {
+  toJSON(message: T): unknown;
+  fromJSON(object: any): T;
+  fromPartial(object: any): T;
+}
+
 /**
- * Build a Nacos Payload from a plain object.
- * JSON.stringify preserves false/0/"" — no omitempty issue.
+ * Build a Nacos Payload from a ts-proto message.
+ * Uses MessageFns.toJSON() for type-safe serialization.
  */
-export function buildPayload(obj: Record<string, any>, typeName: string): Payload {
+export function buildPayload<T>(msg: T, typeName: string, fns?: MessageFns<T>): Payload {
+  const obj = fns ? fns.toJSON(msg) : msg;
   const jsonBytes = Buffer.from(JSON.stringify(obj));
   return {
     metadata: { type: typeName, clientIp: localIP(), headers: {} },
@@ -14,14 +21,15 @@ export function buildPayload(obj: Record<string, any>, typeName: string): Payloa
 }
 
 /**
- * Parse a Nacos Payload into a plain object.
+ * Parse a Nacos Payload into a ts-proto message.
  */
-export function parsePayload(payload: Payload): [Record<string, any>, string] {
+export function parsePayload<T>(payload: Payload, fns?: MessageFns<T>): [T, string] {
   const typeName = payload.metadata?.type ?? '';
   if (!typeName) throw new Error('Empty type in payload metadata');
   const jsonStr = Buffer.from(payload.body.value).toString('utf-8');
   const obj = JSON.parse(jsonStr);
-  return [obj, typeName];
+  const msg = fns ? fns.fromJSON(obj) : obj;
+  return [msg, typeName];
 }
 
 function localIP(): string {

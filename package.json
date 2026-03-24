@@ -12,7 +12,8 @@
   "packageManager": "pnpm@10.27.0",
   "dependencies": {
     "@grpc/grpc-js": "^1.14.3",
-    "@grpc/proto-loader": "^0.8.0"
+    "@grpc/proto-loader": "^0.8.0",
+    "@nacos/sdk-proto": "file:../nacos-sdk-proto/nodejs"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

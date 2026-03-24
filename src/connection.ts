@@ -50,7 +50,7 @@ export class Connection {
       const payload = buildPayload({}, 'ServerCheckRequest');
       this.requestClient.request(payload, (err: any, resp: Payload) => {
         if (err) return reject(err);
-        const [msg] = parsePayload(resp);
+        const [msg] = parsePayload<any>(resp);
         this.connectionId = msg.connectionId || '';
         console.log(`ServerCheck OK, connectionId=${this.connectionId}`);
         resolve();
